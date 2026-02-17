@@ -1,0 +1,881 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Instagram - @mireille_laplanche</title>
+    <style>
+        :root {
+            --bg: #ffffff;
+            --gray-bg: #fafafa;
+            --border: #dbdbdb;
+            --blue: #0095f6;
+            --blue-hover: #0074cc;
+            --text: #262626;
+            --text-light: #8e8e8e;
+            --insta-red: #ed4956;
+        }
+
+        body { font-family: -apple-system, BlinkMacSystemFont, Roboto, Helvetica, Arial, sans-serif; background: var(--gray-bg); margin: 0; color: var(--text); }
+        
+        /* Navbar clickable pour retour accueil */
+        nav { background: white; border-bottom: 1px solid var(--border); padding: 12px 0; text-align: center; position: sticky; top: 0; z-index: 10; font-weight: bold; font-size: 1.2rem; cursor: pointer; }
+
+        .container { max-width: 935px; margin: 0 auto; padding: 30px 20px; }
+
+        header { display: flex; align-items: center; margin-bottom: 44px; }
+        .pfp { width: 150px; height: 150px; border-radius: 50%; object-fit: cover; margin-right: 50px; border: 1px solid var(--border); padding: 2px; background: white;}
+        
+        .user-info h2 { font-weight: 300; font-size: 28px; display: inline-block; margin-right: 20px; margin-bottom: 0; }
+        .stats { display: flex; gap: 30px; list-style: none; padding: 0; margin: 20px 0; font-size: 16px; }
+        .stats li { display: flex; gap: 5px; }
+        .clickable-stat { cursor: pointer; }
+        .clickable-stat:hover { opacity: 0.7; }
+        
+        .btn-follow { background: var(--blue); color: white; border: none; padding: 7px 24px; border-radius: 4px; font-weight: 600; cursor: pointer; font-size: 14px; }
+        .btn-follow.following { background: white; color: var(--text); border: 1px solid var(--border); }
+
+        .bio-name { font-weight: 600; font-size: 16px; }
+
+        /* Grille */
+        .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+        .post { position: relative; aspect-ratio: 1/1; cursor: pointer; background: #eee; overflow: hidden; }
+        .post img { width: 100%; height: 100%; object-fit: cover; }
+        
+        .post-overlay { 
+            position: absolute; top:0; left:0; width:100%; height:100%; 
+            background: rgba(0,0,0,0.3); color: white; display: flex; gap: 8px;
+            justify-content: center; align-items: center; opacity: 0; transition: 0.2s;
+            font-weight: bold; font-size: 1.1rem;
+        }
+        .post:hover .post-overlay { opacity: 1; }
+        .post-overlay svg { fill: var(--insta-red); filter: drop-shadow(0 0 2px rgba(0,0,0,0.3)); }
+
+        /* Empty State (Aucune publication) */
+        .empty-state {
+            grid-column: 1 / -1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 60px 0;
+            color: var(--text);
+        }
+        .camera-icon-circle {
+            width: 60px; height: 60px;
+            border: 2px solid var(--text);
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            margin-bottom: 20px;
+        }
+        .empty-text { font-size: 28px; font-weight: 300; }
+
+        /* --- MODALES --- */
+        .modal { display: none; position: fixed; z-index: 100; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); justify-content: center; align-items: center; }
+        .close-modal { position: absolute; top: 15px; right: 25px; color: white; font-size: 35px; cursor: pointer; z-index: 102; }
+
+        .modal-content-photo { background: white; display: flex; width: 90%; max-width: 900px; height: 600px; border-radius: 4px; overflow: hidden; position: relative;}
+        
+        .nav-arrow {
+            position: absolute; top: 50%; transform: translateY(-50%);
+            background: rgba(255, 255, 255, 0.9); border: none; width: 34px; height: 34px;
+            border-radius: 50%; cursor: pointer; font-weight: bold; z-index: 10;
+            display: flex; align-items: center; justify-content: center; font-size: 18px;
+        }
+        .nav-arrow:hover { background: white; }
+        .prev-arrow { left: 15px; }
+        .next-arrow { right: 15px; }
+
+        .modal-img { flex: 1.5; background: black; display: flex; align-items: center; justify-content: center; }
+        .modal-img img { max-width: 100%; max-height: 100%; object-fit: contain; transition: opacity 0.2s; }
+        
+        .modal-side { flex: 1; display: flex; flex-direction: column; background: white; border-left: 1px solid var(--border); }
+        .modal-header { padding: 15px; border-bottom: 1px solid var(--border); font-weight: bold; display: flex; align-items: center; gap: 12px; }
+        
+        .modal-header-text { display: flex; flex-direction: column; line-height: 1.2; }
+        .modal-username { font-size: 14px; cursor: pointer; }
+        .modal-username:hover { text-decoration: underline; }
+        .location { font-size: 12px; color: var(--text-light); font-weight: 400; }
+
+        .mini-pfp { width: 32px; height: 32px; border-radius: 50%; object-fit: cover; cursor: pointer;}
+        
+        .modal-comments { flex-grow: 1; padding: 15px; overflow-y: auto; font-size: 0.9rem; scroll-behavior: smooth; }
+        .comment { margin-bottom: 12px; word-wrap: break-word; }
+        
+        /* Style pour les liens utilisateurs */
+        .user-link { cursor: pointer; font-weight: bold; color: var(--text); text-decoration: none; }
+        .user-link:hover { opacity: 0.6; }
+
+        .modal-actions { padding: 15px 15px 5px; border-top: 1px solid var(--border); display: flex; align-items: center; gap: 12px; }
+        
+        .action-btn { cursor: pointer; display: flex; align-items: center; transition: opacity 0.2s; }
+        .action-btn:hover { opacity: 0.6; }
+        .heart svg { fill: #262626; transition: transform 0.1s ease-in-out; }
+        .heart.active svg { fill: var(--insta-red); transform: scale(1.1); }
+        .share svg { fill: #262626; }
+
+        .likes-count { padding: 0 15px 10px; font-weight: bold; font-size: 0.9rem; }
+
+        .add-comment-box {
+            padding: 10px 15px 15px;
+            border-top: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+        }
+        .add-comment-box input {
+            flex-grow: 1;
+            border: none;
+            outline: none;
+            font-size: 14px;
+            padding: 5px 0;
+        }
+        .btn-post {
+            background: none;
+            border: none;
+            color: var(--blue);
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            padding-left: 10px;
+        }
+        .btn-post:hover { color: var(--blue-hover); }
+        .btn-post:disabled { opacity: 0.3; cursor: default; }
+
+        /* MODALES LISTES */
+        .modal-content-list { background: white; width: 400px; max-height: 450px; border-radius: 12px; overflow: hidden; display: flex; flex-direction: column; }
+        .modal-list-header { padding: 10px; text-align: center; font-weight: bold; border-bottom: 1px solid var(--border); position: relative;}
+        .close-list { position: absolute; right: 15px; top: 8px; font-size: 25px; cursor: pointer; }
+        .user-list { list-style: none; padding: 0; margin: 0; overflow-y: auto; }
+        .user-list li { display: flex; align-items: center; padding: 10px 15px; justify-content: space-between; border-bottom: 1px solid #f0f0f0;}
+        .user-list-info { display: flex; align-items: center; gap: 10px; cursor: pointer; }
+        .btn-small { padding: 5px 10px; border: 1px solid var(--border); background: white; border-radius: 4px; font-weight: 600; font-size: 12px; cursor: pointer; }
+	
+/* --- RESPONSIVE MOBILE (Ajouter à la fin du CSS) --- */
+@media screen and (max-width: 768px) {
+    
+    /* Ajustement du conteneur principal */
+    .container {
+        padding: 15px 10px;
+        width: 100%;
+        box-sizing: border-box;
+    }
+
+    /* --- HEADER PROFIL --- */
+    header {
+        flex-direction: column; /* Empiler la photo et les infos */
+        align-items: center;
+        text-align: center;
+        margin-bottom: 30px;
+    }
+
+    .pfp {
+        margin-right: 0;
+        margin-bottom: 15px;
+        width: 100px; /* Photo plus petite */
+        height: 100px;
+    }
+
+    .user-info {
+        width: 100%;
+    }
+
+    .user-info h2 {
+        display: block;
+        margin-right: 0;
+        margin-bottom: 10px;
+        font-size: 24px;
+    }
+
+    /* Cible la div qui contient le nom et le bouton */
+    .user-info > div {
+        flex-direction: column;
+        gap: 10px;
+        margin-bottom: 15px !important;
+    }
+
+    /* Statistiques plus compactes */
+    .stats {
+        justify-content: center;
+        gap: 20px;
+        padding: 0;
+        font-size: 14px;
+    }
+
+    .stats li {
+        flex-direction: column; /* Chiffre au-dessus du texte */
+        align-items: center;
+    }
+
+    /* --- GRILLE PHOTOS --- */
+    .grid {
+        gap: 3px; /* Espacement réduit style mobile */
+    }
+
+    /* --- MODALE PHOTO (Le plus important) --- */
+    .modal-content-photo {
+        flex-direction: column; /* Image en haut, commentaires en bas */
+        width: 95%; /* Prend toute la largeur */
+        height: 85vh; /* Hauteur max de l'écran */
+        max-width: none;
+    }
+
+    .modal-img {
+        flex: none; /* Ne pas étirer n'importe comment */
+        width: 100%;
+        height: 50%; /* L'image prend la moitié haute */
+        background: black;
+    }
+
+    .modal-side {
+        width: 100%;
+        height: 50%; /* Les commentaires prennent la moitié basse */
+        border-left: none;
+        border-top: 1px solid var(--border);
+    }
+    
+    /* Flèches de navigation repositionnées */
+    .nav-arrow {
+        width: 30px; 
+        height: 30px;
+        font-size: 14px;
+        background: rgba(255, 255, 255, 0.6);
+    }
+    .prev-arrow { left: 5px; }
+    .next-arrow { right: 5px; }
+
+    /* --- MODALES LISTES (Abonnés) --- */
+    .modal-content-list {
+        width: 90%; /* Plus large sur mobile */
+        max-height: 80vh;
+    }
+}
+    </style>
+</head>
+<body>
+
+<nav onclick="resetToMireille()">Instagram</nav>
+
+<div class="container">
+    <header id="profileHeader">
+       <img src="Gemini_Generated_Image_imqhpeimqhpeimqh.jpg" class="pfp" id="headerPfp" alt="Profile Pic">
+        <div class="user-info">
+            <div style="display: flex; align-items: center; margin-bottom: 20px;">
+                <h2 id="headerUsername">mireille_laplanche</h2> 
+                <button class="btn-follow" id="followBtn" onclick="toggleFollow()">S'abonner</button>
+            </div>
+            <ul class="stats">
+                <li id="postsStat"><b>9</b> publications</li>
+                <li class="clickable-stat" onclick="openFollowersModal()"><b id="followerCount">154k</b> abonnés</li>
+                <li class="clickable-stat" onclick="openFollowingModal()"><b>30</b> abonnements</li>
+            </ul>
+            <div id="headerBio">
+                <span class="bio-name">Boudin d'argent</span><br>
+                📍 Bourg-en-Bresse <br>
+                🚴‍♀️ Direction la garden-party de l'Elysée avec mes boudins préférés.<br>
+            </div>
+        </div>
+    </header>
+
+    <div class="grid" id="mainGrid"></div>
+</div>
+
+<div id="photoModal" class="modal">
+    <span class="close-modal" onclick="closePhotoModal()">&times;</span>
+    <div class="modal-content-photo">
+        <button class="nav-arrow prev-arrow" onclick="prevPost()">&#10094;</button>
+        <button class="nav-arrow next-arrow" onclick="nextPost()">&#10095;</button>
+
+        <div class="modal-img">
+            <img id="modalImageDisplay" src="">
+        </div>
+        <div class="modal-side">
+            <div class="modal-header">
+                <img src="Gemini_Generated_Image_imqhpeimqhpeimqh.jpg" class="mini-pfp" onclick="resetToMireille()">
+                <div class="modal-header-text">
+                    <span class="modal-username" onclick="resetToMireille()">mireille_laplanche</span>
+                    <span id="modalLocation" class="location"></span>
+                </div>
+            </div>
+            <div class="modal-comments" id="commentBox"></div>
+            
+            <div class="modal-actions">
+                <div class="action-btn heart" id="modalHeart" onclick="toggleLike()">
+                    <svg width="24" height="24" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M12 21.35L10.55 20.03C5.4 15.36 2 12.28 2 8.5C2 5.42 4.42 3 7.5 3C9.24 3 10.91 3.81 12 5.09C13.09 3.81 14.76 3 16.5 3C19.58 3 22 5.42 22 8.5C22 12.28 18.6 15.36 13.45 20.04L12 21.35Z"/>
+                    </svg>
+                </div>
+                <div class="action-btn share" onclick="alert('Lien copié dans le presse-papier !')">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M22 2L11 13M22 2L15 22L11 13M11 13L2 9L22 2" stroke="#262626" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </div>
+            </div>
+            
+            <div class="likes-count"><span id="modalLikes">0</span> j'aime</div>
+
+            <div class="add-comment-box">
+                 <input type="text" id="commentInput" placeholder="Ajouter un commentaire..." autocomplete="off">
+                 <button class="btn-post" onclick="postComment()">Publier</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="followingModal" class="modal">
+    <div class="modal-content-list">
+        <div class="modal-list-header">
+            Abonnements
+            <span class="close-list" onclick="closeFollowingModal()">&times;</span>
+        </div>
+        <ul class="user-list" id="followingList"></ul>
+    </div>
+</div>
+
+<div id="followersModal" class="modal">
+    <div class="modal-content-list">
+        <div class="modal-list-header">
+            Abonnés
+            <span class="close-list" onclick="closeFollowersModal()">&times;</span>
+        </div>
+        <ul class="user-list" id="followersList"></ul>
+    </div>
+</div>
+
+<script>
+    // --- DONNÉES ---
+    const mireilleData = {
+        name: 'mireille_laplanche',
+        img: 'Gemini_Generated_Image_imqhpeimqhpeimqh.jpg',
+        bio: '<span class="bio-name">Boudin d\'argent</span><br>📍 Bourg-en-Bresse <br>🚴‍♀️ Direction la garden-party de l\'Elysée avec mes boudins préférés.',
+        followers: '154k',
+        following: '30',
+        postsCount: '9',
+        isMain: true
+    };
+
+    const postsData = [
+        { 
+            img: 'gardenparty.jpg', 
+            likes: '1,8M', 
+            caption: "Nous sommes bien arrivées à la garden-party de L'Elysée ! 🌳", 
+            location : 'Paris',
+            comments: [
+                { user: 'hakima_officiel', text: "Le repos nous attend ! 😴 " },
+                { user: 'boudin_lovers_club', text: "Le boudin à l'honneur dans la capitale 🤩" },
+                { user: 'kader_militaire', text: "Mission accomplie. Repos !" },
+                { user: 'valerie_centi', text: "Profitez bien les filles 🥂" },
+                { user: 'marie_martin_01', text: "On est fiers de vous à Bourg !!!" },
+                { user: 'jean_dupont', text: "👏👏👏" },
+                { user: 'michel_du_pmu', text: "Vous avez vu le Président ???" },
+                { user: 'vero_gym_tonic', text: "Trop la classe les filles ❤️" },
+                { user: 'jean_michel_barbecue', text: "Le buffet est bon au moins ?" },
+                { user: 'lulu_la_nantaise', text: "On est jaloux 😉 profitez !" },
+                { user: 'fan_de_mireille', text: "❤️❤️❤️" },
+                { user: 'top_chef_fan', text: "Il y a du pâté en croûte ?" },
+                { user: 'martine_dupont', text: "Bisous de nous deux" }
+            ]
+        },
+        { 
+            img: 'monsoleil.jpg', 
+            likes: '378k', 
+            caption: 'Quelle beauté ce soleil ! ☀️', 
+            location : 'Montargis',
+            comments: [
+                { user: 'passion_velo_01', text: "Attention aux coups de chaud sur le vélo ! 🧢" },
+                { user: 'clementine_beauvais', text: "Magnifique lumière ✨" },
+                { user: 'mamie_cuisine_60', text: "C'est bon pour le moral le soleil." },
+                { user: 'astrid_love_indochine', text: "J'ai demandé à la lune... mais le soleil c'est bien aussi 😉" },
+                { user: 'julie_moreau', text: "☀️☀️☀️" },
+                { user: 'sophie.lefevre', text: "Bon courage pour la suite de la route !" },
+                { user: 'meteo_france_fan', text: "Indice UV 8 aujourd'hui, crème solaire obligatoire !" },
+                { user: 'le_jardinier_01', text: "Ça va faire mûrir les tomates ça." },
+                { user: 'lucas_34', text: "😎" },
+                { user: 'sarah_muller', text: "Quelle chance, ici il pleut..." },
+                { user: 'benjamin_guerin', text: "Hydratez-vous bien surtout" },
+                { user: 'chloe_roux', text: "💛💛" }
+            ]
+        },
+        { 
+            img: 'poeme.jpg', 
+            likes: '302,7k', 
+            caption: 'Merci à nos héros réparateurs ! 🛠️', 
+            location : 'Briare',
+            comments: [
+                { user: 'roger_vtt_morvan', text: "Ah la poisse... les problèmes, toujours au mauvais moment !" },
+                { user: 'vieux_guidons_de_france', text: "Rien ne vaut un bon vieux vélo acier, ça se répare facile." },
+                { user: 'hakima_officiel', text: "Heureusement qu'ils étaient là 🙏" },
+                { user: 'pierre_durand', text: "Bravo l'entraide 🤝" },
+                { user: 'nicolas_simon', text: "🔧💪" },
+                { user: 'le_roi_du_boudin_noir', text: "Si le vélo est cassé, on mange du boudin en attendant !" },
+                { user: 'cycliste_du_dimanche', text: "C'était quoi ? La chaîne ?" },
+                { user: 'camille_david', text: "Ouf ! Plus de peur que de mal." },
+                { user: 'mecanique_pour_tous', text: "Un coup de clé de 12 et c'est reparti." },
+                { user: 'antoine_garcia', text: "👏👏" },
+                { user: 'emma_petit', text: "Les gens sont gentils dans le coin." },
+                { user: 'thomas_leroy', text: "Bonne route pour la suite !" },
+                { user: 'manon_thomas', text: "🙏✨" }
+            ]
+        },
+        { 
+            img: 'camping.jpg', 
+            likes: '254k', 
+            caption: "Bye bye le camping de l'étang du Rousset ! Petite pensée pour Jean-Claude 😉 ", 
+            location : 'Étang du Rousset',
+            comments: [
+                { user: 'la_fourchette_folle', text: "C'est qui ce Jean-Claude ? un admirateur ? 😏" },
+                { user: 'rando_et_saucisson', text: "Super spot pour le bivouac !" },
+                { user: 'kader_militaire', text: "Le camping, c'est l'école de la vie." },
+                { user: 'sophie_durand', text: "⛺🌲" },
+                { user: 'camille_david', text: "J'espère que vous avez bien dormi !" },
+                { user: 'thomas_leroy', text: "Jean-Claude le roi de la pétanque ?" },
+                { user: 'marie_martin_01', text: "Coquinou ce Jean-Claude ! 😂" },
+                { user: 'camping_paradis_fan', text: "Fiesta boom boom ?" },
+                { user: 'julie_moreau', text: "Pas trop de moustiques ?" },
+                { user: 'alexandre_robin', text: "😉😉" },
+                { user: 'paulette_gastronomie', text: "C'est là qu'on avait mangé les grillades l'an dernier ?" },
+                { user: 'jean_dupont', text: "👍" }
+            ]
+        },
+        { 
+            img: 'remorque.jpg', 
+            likes: '144k', 
+            caption: 'En route vers Monceau-les-Mines ! 🚴‍♀️', 
+            location : 'On the road again',
+            comments: [
+                { user: 'cycliste_du_dimanche', text: "Quels mollets Mireille ! 💪" },
+                { user: 'france_by_bike', text: "Bonne route, attention aux voitures." },
+                { user: 'hakima_officiel', text: "Courage à nous, on lâche rien !" },
+                { user: 'pignon_fixe_lyon', text: "Respect pour la charge tractée." },
+                { user: 'sarah_muller', text: "🚴‍♀️💨💨" },
+                { user: 'maillot_jaune_fan', text: "Mireille maillot à pois !" },
+                { user: 'coach_sportif_71', text: "Belle position sur le vélo." },
+                { user: 'valerie_centi', text: "Allez les filles !!!" },
+                { user: 'romain_gauthier', text: "C'est lourd la remorque ?" },
+                { user: 'hugo_bertrand', text: "Machine ! 💪" },
+                { user: 'clara_fitness', text: "Goals 😍" },
+                { user: 'mathieu_girard', text: "Attention ça grimpe après Monceau !" },
+                { user: 'audrey_perrin', text: "🔥🔥🔥" }
+            ]
+        },
+        { 
+            img: 'boudinsbal.jpg', 
+            likes: '1,2M', 
+            caption: 'Les boudins vont au bal ! ✨', 
+            location : 'Cluny',
+            comments: [
+                { user: 'valerie_centi', text: "Quelle élégance mesdames 💃" },
+                { user: 'astrid_love_indochine', text: "Nous sommes prêtes pour le dancefloor !" },
+                { user: 'boucherie_du_coin', text: "Les plus beaux boudins de France, sans aucun doute." },
+                { user: 'manon_thomas', text: "J'adore vos tenues 😍" },
+                { user: 'lucas_34', text: "✨✨" },
+                { user: 'confrerie_du_gout', text: "La classe à la française." },
+                { user: 'mode_et_travaux', text: "C'est du sur-mesure ?" },
+                { user: 'pauline_blanc', text: "Vous êtes rayonnantes !" },
+                { user: 'dj_kiki', text: "Ce soir on met le feu !" },
+                { user: 'laura_chevalier', text: "💃💃💃" },
+                { user: 'jean_michel_barbecue', text: "Toujours aussi belles." },
+                { user: 'sophie.lefevre', text: "Amusez-vous bien !" },
+                { user: 'chloe_roux', text: "❤️❤️" }
+            ]
+        },
+        { 
+            img: 'esplanade.jpg', 
+            likes: '79,5k', 
+            caption: 'Inauguration de notre stand de boudin ! 🫘', 
+            location : 'Esplanade Lamartine',
+            comments: [
+                { user: 'manger_vrai', text: "Miam ! Gardez-m'en un morceau." },
+                { user: 'tourisme_bresse', text: "Belle mise en valeur de notre terroir." },
+                { user: 'chef_lucien_gastronomie', text: "Je valide l'endroit 👌" },
+                { user: 'antoine_garcia', text: "Ça donne faim tout ça 😋" },
+                { user: 'hakima_officiel', text: "J'ai eu l'occasion de vous voir. Le stand est magnifique grâce à toi Mireille !" },
+                { user: 'benjamin_guerin', text: "Protéines de qualité !" },
+                { user: 'le_roi_du_boudin_noir', text: "La relève est assurée." },
+                { user: 'gourmand_01', text: "Il est où le stand exactement ?" },
+                { user: 'julie_moreau', text: "🤤🤤🤤" },
+                { user: 'pierre_durand', text: "Félicitations pour l'organisation." },
+                { user: 'sarah_garcia', text: "Bravo !!!" },
+                { user: 'boudin_lovers_club', text: "On arrive !!!" },
+                { user: 'maxime_fontaine', text: "👏" }
+            ]
+        },
+        { 
+            img: 'Place bourg.jpg', 
+            likes: '50,8k', 
+            caption: "Le voyage des boudins commence ! Ouvrez l'oeil 👁️", 
+            location : 'Bourg-en-Bresse',
+            comments: [
+                { user: 'marie_martin_01', text: "Bon voyage les filles ! 👋" },
+                { user: 'saveurs_de_l_ain', text: "Portez haut les couleurs de l'Ain !" },
+                { user: 'kader_militaire', text: "Départ imminent." },
+                { user: 'pauline_blanc', text: "On vous suit sur Insta !" },
+                { user: 'maxime_fontaine', text: "🚀🚀🚀" },
+                { user: 'romain_gauthier', text: "Revenez-nous avec plein de souvenirs." },
+                { user: 'ville_de_bourg', text: "Fierté locale !" },
+                { user: 'nicolas_simon', text: "Allez hop ! En selle !" },
+                { user: 'clementine_beauvais', text: "Hâte de voir vos aventures." },
+                { user: 'emma_petit', text: "👋👋" },
+                { user: 'voisin_de_mireille', text: "Oublie pas d'arroser les plantes avant de partir !" },
+                { user: 'lucas_richard', text: "Bonne route !" },
+                { user: 'sophie_durand', text: "On pense à vous." }
+            ]
+        },
+        { 
+            img: 'boudins.jpg', 
+            likes: '28,3k', 
+            caption: 'Les boudins réunis ! 💪', 
+            location: 'Bourg-en-Bresse',
+            comments: [
+                { user: 'boudin_lovers_club', text: "La dream team ! ❤️" },
+                { user: 'hakima_officiel', text: "Copines pour la vie !" },
+                { user: 'astrid_love_indochine', text: "L'aventurier... c'est vous !" },
+                { user: 'lea.michel', text: "Trop chouettes la photo." },
+                { user: 'audrey_perrin', text: "🥰🥰" },
+                { user: 'le_roi_du_boudin_noir', text: "Mes championnes." },
+                { user: 'best_friends_forever', text: "L'amitié c'est sacré." },
+                { user: 'valerie_centi', text: "Un beau trio !" },
+                { user: 'julien_david', text: "Sourires éclatants 😁" },
+                { user: 'manon_morel', text: "💕" },
+                { user: 'alexandre_girard', text: "Bravo les filles." },
+                { user: 'la_france_en_remorque', text: "C'est parti !" },
+                { user: 'sarah_muller', text: "🙌🙌" }
+            ]
+        }
+    ];
+
+    const followingData = [
+        { name: 'kader_militaire', bio: "Être militaire c'est un état d'esprit" },
+        { name: 'astrid_love_indochine', bio: 'TROIS NUITS PAR SEMAINE !!!' },
+        { name: 'hakima_officiel', bio: 'Boudin de bronze' },
+        { name: 'passion_velo_01', bio: 'Tout sur le cyclisme dans l Ain' },
+        { name: 'le_roi_du_boudin_noir', bio: 'Artisan charcutier depuis 1982' },
+        { name: 'la_france_en_remorque', bio: 'Roadtrips et aventures rurales' },
+        { name: 'chef_lucien_gastronomie', bio: 'Cuisine du terroir et partage' },
+        { name: 'vtt_detente_71', bio: 'Club de vélo de Saône-et-Loire' },
+        { name: 'boudin_lovers_club', bio: 'La communauté des gourmands' },
+        { name: 'routes_departementales', bio: 'Photos de nos belles routes' },
+        { name: 'mamie_cuisine_60', bio: 'Mes meilleures recettes maison' },
+        { name: 'echappee_belle_fr', bio: 'Voyager au coeur de la France' },
+        { name: 'pignon_fixe_lyon', bio: 'Le vélo urbain et sportif' },
+        { name: 'terroir_et_tradition', bio: 'Défense du goût français' },
+        { name: 'cyclotourisme_mag', bio: 'L actu pour les rouleurs' },
+        { name: 'boucherie_du_coin', bio: 'Produits frais de nos éleveurs' },
+        { name: 'les_chemins_oublies', bio: 'Urbex rural et villages cachés' },
+        { name: 'roger_vtt_morvan', bio: 'Rando foret et boue !' },
+        { name: 'saveurs_de_l_ain', bio: 'Le meilleur du 01' },
+        { name: 'maillot_jaune_fan', bio: 'Fan inconditionnel du Tour' },
+        { name: 'confrerie_du_gout', bio: 'Club épicurien de Bresse' },
+        { name: 'rando_et_saucisson', bio: 'La vie simple' },
+        { name: 'vieux_guidons_de_france', bio: 'Vélos vintage uniquement' },
+        { name: 'jean_michel_barbecue', bio: 'Spécialiste feu de bois' },
+        { name: 'france_by_bike', bio: 'Slow travel across France' },
+        { name: 'paulette_gastronomie', bio: 'Blog culinaire et terroir' },
+        { name: 'cycliste_du_dimanche', bio: 'Le plaisir avant la performance' },
+        { name: 'manger_vrai', bio: 'Contre l industriel, vive le boudin' },
+        { name: 'tourisme_bresse', bio: 'Bienvenue chez nous' },
+        { name: 'la_fourchette_folle', bio: 'Humour et bons petits plats' }
+    ];
+
+    const followersData = [
+        { name: 'clementine_beauvais', bio: 'Autrice & Paillettes ✨' },
+        { name: 'valerie_centi', bio: 'Littérature jeunesse 4life 🌸' },
+        { name: 'marie_martin_01', bio: 'Bresse et traditions' },
+        { name: 'jean_dupont', bio: '' },
+        { name: 'sophie.lefevre', bio: 'Maman de 2 chats' },
+        { name: 'pierre_durand', bio: 'Vélo et nature' },
+        { name: 'julie_moreau', bio: 'Gourmande 🍰' },
+        { name: 'lucas_34', bio: '' },
+        { name: 'emma_petit', bio: 'Voyageuse' },
+        { name: 'thomas_leroy', bio: 'Photographie' },
+        { name: 'chloe_roux', bio: '' },
+        { name: 'nicolas_simon', bio: 'Allez les bleus !' },
+        { name: 'lea.michel', bio: 'Etudiante' },
+        { name: 'antoine_garcia', bio: '' },
+        { name: 'manon_thomas', bio: 'Lifestyle' },
+        { name: 'alexandre_robin', bio: '' },
+        { name: 'camille_david', bio: 'Musique 🎵' },
+        { name: 'hugo_bertrand', bio: '' },
+        { name: 'sarah_muller', bio: 'Yoga & Zen' },
+        { name: 'maxime_fontaine', bio: '' },
+        { name: 'laura_chevalier', bio: '' },
+        { name: 'benjamin_guerin', bio: 'Crossfit' },
+        { name: 'pauline_blanc', bio: '' },
+        { name: 'romain_gauthier', bio: '' },
+        { name: 'audrey_perrin', bio: 'Déco d\'intérieur' },
+        { name: 'mathieu_girard', bio: '' }
+    ];
+
+    // --- FONCTIONS UTILITAIRES ---
+
+    // Récupérer l'URL de l'avatar pour un utilisateur donné (logique centralisée)
+    function getProfileImage(username) {
+        if (username === 'mireille_laplanche') return mireilleData.img;
+        if (username === 'astrid_love_indochine') return "boudin d'or.jpg";
+        if (username === 'hakima_officiel') return "boudin de bronze.jpg";
+        if (username === 'kader_militaire') return "monsoleil.jpg";
+        if (username === 'clementine_beauvais') return "beauvais.jpg";
+        if (username === 'valerie_centi') return "lj.jpg";
+        return `https://i.pravatar.cc/150?u=${username}`;
+    }
+
+    // Trouver un utilisateur dans les listes
+    function findUser(username) {
+        if (username === 'mireille_laplanche') return mireilleData;
+        
+        let user = followingData.find(u => u.name === username) || 
+                   followersData.find(u => u.name === username);
+        
+        // Si l'utilisateur n'est pas dans les listes (commentateur inconnu), on crée un profil fake
+        if (!user) {
+            user = { name: username, bio: 'Utilisateur Instagram' };
+        }
+        return user;
+    }
+
+    // --- INITIALISATION DU GRID (Vue Mireille) ---
+    const grid = document.getElementById('mainGrid');
+    const heartSVG = `<svg width="18" height="18" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 21.35L10.55 20.03C5.4 15.36 2 12.28 2 8.5C2 5.42 4.42 3 7.5 3C9.24 3 10.91 3.81 12 5.09C13.09 3.81 14.76 3 16.5 3C19.58 3 22 5.42 22 8.5C22 12.28 18.6 15.36 13.45 20.04L12 21.35Z"/></svg>`;
+
+    function renderMireilleGrid() {
+        grid.innerHTML = '';
+        postsData.forEach((post, index) => {
+            grid.innerHTML += `
+                <div class="post" onclick="openPhotoModal(${index})">
+                    <img src="${post.img}">
+                    <div class="post-overlay">
+                        ${heartSVG} <span>${post.likes}</span>
+                    </div>
+                </div>
+            `;
+        });
+    }
+
+    renderMireilleGrid(); // Init
+
+    // --- CHARGEMENT D'UN PROFIL (Navigation) ---
+    function loadProfile(username) {
+        // Fermer toutes les modales si ouvertes
+        closePhotoModal();
+        closeFollowingModal();
+        closeFollowersModal();
+        
+        // Scroll en haut
+        window.scrollTo(0, 0);
+
+        if (username === 'mireille_laplanche') {
+            resetToMireille();
+            return;
+        }
+
+        const user = findUser(username);
+        const pfpUrl = getProfileImage(username);
+
+        // 1. Mise à jour du Header
+        document.getElementById('headerPfp').src = pfpUrl;
+        document.getElementById('headerUsername').innerText = user.name;
+        document.getElementById('headerBio').innerHTML = `<span class="bio-name">${user.name}</span><br>${user.bio}`;
+        
+        // Stats bidons pour les autres
+        document.getElementById('postsStat').innerHTML = `<b>0</b> publications`;
+        // CORRECTION ICI : Juste le chiffre
+        document.getElementById('followerCount').innerText = Math.floor(Math.random() * 500);
+
+        // Bouton Follow devient un bouton Message ou Retour
+        const followBtn = document.getElementById('followBtn');
+        followBtn.innerText = "Message"; 
+        followBtn.classList.add('following'); 
+        followBtn.onclick = resetToMireille; // Clic pour revenir (UX simple)
+
+        // 2. Vider la grille et afficher "Aucune publication"
+        grid.innerHTML = `
+            <div class="empty-state">
+                <div class="camera-icon-circle">
+                    <svg width="34" height="34" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M12 2C6.48 2 2 6.48 2 12C2 17.52 6.48 22 12 22C17.52 22 22 17.52 22 12C22 6.48 17.52 2 12 2ZM12 20C7.59 20 4 16.41 4 12C4 7.59 7.59 4 12 4C16.41 4 20 7.59 20 12C20 16.41 16.41 20 12 20ZM14 7H10L9 9H7C6.45 9 6 9.45 6 10V16C6 16.55 6.45 17 7 17H17C17.55 17 18 16.55 18 16V10C18 9.45 17.55 9 17 9H15L14 7ZM12 15C10.9 15 10 14.1 10 13C10 11.9 10.9 11 12 11C13.1 11 14 11.9 14 13C14 14.1 13.1 15 12 15Z" fill="#262626"/>
+                    </svg>
+                </div>
+                <div class="empty-text">Aucune publication</div>
+            </div>
+        `;
+    }
+
+    function resetToMireille() {
+        // Reset Header
+        document.getElementById('headerPfp').src = mireilleData.img;
+        document.getElementById('headerUsername').innerText = mireilleData.name;
+        document.getElementById('headerBio').innerHTML = mireilleData.bio;
+        document.getElementById('postsStat').innerHTML = `<b>${mireilleData.postsCount}</b> publications`;
+        
+        // CORRECTION ICI : Juste le chiffre
+        document.getElementById('followerCount').innerText = mireilleData.followers;
+
+        // Reset Button
+        const followBtn = document.getElementById('followBtn');
+        followBtn.innerText = isFollowing ? "Abonné(e)" : "S'abonner";
+        followBtn.onclick = toggleFollow;
+        if(isFollowing) followBtn.classList.add('following');
+        else followBtn.classList.remove('following');
+
+        // Reset Grid
+        renderMireilleGrid();
+    }
+
+    // --- RENDU DES LISTES (MODALES) ---
+    function renderFollowingList() {
+        const list = document.getElementById('followingList');
+        list.innerHTML = '';
+        followingData.forEach((user) => {
+            const imgUrl = getProfileImage(user.name);
+            list.innerHTML += `
+                <li>
+                    <div class="user-list-info" onclick="loadProfile('${user.name}')">
+                        <img src="${imgUrl}" class="mini-pfp">
+                        <div>
+                            <b style="display:block; font-size:14px;">${user.name}</b>
+                            <span style="color:#8e8e8e; font-size:12px;">${user.bio}</span>
+                        </div>
+                    </div>
+                    <button class="btn-small">Abonné(e)</button>
+                </li>
+            `;
+        });
+    }
+
+    function renderFollowersList() {
+        const list = document.getElementById('followersList');
+        list.innerHTML = '';
+        followersData.forEach((user) => {
+            const imgUrl = getProfileImage(user.name);
+            list.innerHTML += `
+                <li>
+                    <div class="user-list-info" onclick="loadProfile('${user.name}')">
+                        <img src="${imgUrl}" class="mini-pfp">
+                        <div>
+                            <b style="display:block; font-size:14px;">${user.name}</b>
+                            <span style="color:#8e8e8e; font-size:12px;">${user.bio}</span>
+                        </div>
+                    </div>
+                    <button class="btn-small" style="background:#0095f6; color:white; border:none;">Suivre</button>
+                </li>
+            `;
+        });
+    }
+
+    renderFollowingList();
+    renderFollowersList(); 
+
+    // --- MODALES LOGIC ---
+    let currentPostIndex = 0;
+    const photoModal = document.getElementById("photoModal");
+    const modalImgDisplay = document.getElementById("modalImageDisplay");
+    const modalLikes = document.getElementById("modalLikes");
+    const commentBox = document.getElementById("commentBox");
+    const heart = document.getElementById("modalHeart");
+    const modalLocation = document.getElementById("modalLocation");
+    const commentInput = document.getElementById("commentInput");
+
+    function openPhotoModal(index) {
+        currentPostIndex = index;
+        updateModalContent();
+        photoModal.style.display = "flex";
+    }
+
+    function updateModalContent() {
+        const post = postsData[currentPostIndex];
+        
+        modalImgDisplay.style.opacity = 0;
+        setTimeout(() => {
+            modalImgDisplay.src = post.img;
+            modalImgDisplay.style.opacity = 1;
+        }, 100);
+        
+        modalLikes.innerText = post.likes;
+        heart.classList.remove('active');
+        modalLocation.innerText = post.location || "";
+        modalLocation.style.display = post.location ? "block" : "none";
+        
+        commentInput.value = "";
+
+        // Affichage des commentaires avec liens
+        let commentsHTML = `<div class="comment"><b class="user-link" onclick="loadProfile('mireille_laplanche')">mireille_laplanche</b> ${post.caption}</div>`;
+        
+        if (post.comments) {
+            post.comments.forEach(comment => {
+                commentsHTML += `<div class="comment"><b class="user-link" onclick="loadProfile('${comment.user}')">${comment.user}</b> ${comment.text}</div>`;
+            });
+        }
+
+        commentBox.innerHTML = commentsHTML;
+        commentBox.scrollTop = commentBox.scrollHeight;
+    }
+
+    function postComment() {
+        const text = commentInput.value.trim();
+        if (!text) return; 
+
+        const newComment = { user: 'visiteur_curieux', text: text };
+        
+        if (!postsData[currentPostIndex].comments) {
+            postsData[currentPostIndex].comments = [];
+        }
+        postsData[currentPostIndex].comments.push(newComment);
+
+        const newCommentHTML = `<div class="comment"><b class="user-link" onclick="loadProfile('visiteur_curieux')">visiteur_curieux</b> ${text}</div>`;
+        commentBox.insertAdjacentHTML('beforeend', newCommentHTML);
+        commentBox.scrollTop = commentBox.scrollHeight;
+        commentInput.value = '';
+    }
+
+    commentInput.addEventListener("keypress", function(event) {
+        if (event.key === "Enter") postComment();
+    });
+
+    function nextPost() { currentPostIndex = (currentPostIndex + 1) % postsData.length; updateModalContent(); }
+    function prevPost() { currentPostIndex = (currentPostIndex - 1 + postsData.length) % postsData.length; updateModalContent(); }
+    function closePhotoModal() { photoModal.style.display = "none"; }
+    function toggleLike() { heart.classList.toggle('active'); }
+
+    // GESTION MODALE ABONNEMENTS / ABONNÉS
+    const followingModal = document.getElementById("followingModal");
+    function openFollowingModal() { followingModal.style.display = "flex"; }
+    function closeFollowingModal() { followingModal.style.display = "none"; }
+
+    const followersModal = document.getElementById("followersModal");
+    function openFollowersModal() { followersModal.style.display = "flex"; }
+    function closeFollowersModal() { followersModal.style.display = "none"; }
+
+    document.addEventListener('keydown', (e) => {
+        if (photoModal.style.display === "flex") {
+            if (document.activeElement === commentInput) {
+                if (e.key === "Escape") closePhotoModal();
+                return; 
+            }
+            if (e.key === "ArrowRight") nextPost();
+            if (e.key === "ArrowLeft") prevPost();
+            if (e.key === "Escape") closePhotoModal();
+        }
+    });
+
+    window.onclick = function(event) {
+        if (event.target == photoModal) closePhotoModal();
+        if (event.target == followingModal) closeFollowingModal();
+        if (event.target == followersModal) closeFollowersModal();
+    }
+
+    let isFollowing = false;
+    function toggleFollow() {
+        // Si on est sur le profil de quelqu'un d'autre (bouton 'Message'), ça ramène à Mireille
+        const btn = document.getElementById("followBtn");
+        if(btn.innerText === "Message") {
+            resetToMireille();
+            return;
+        }
+
+        isFollowing = !isFollowing;
+        btn.innerText = isFollowing ? "Abonné(e)" : "S'abonner";
+        btn.classList.toggle("following");
+    }
+</script>
+
+</body>
+</html>
